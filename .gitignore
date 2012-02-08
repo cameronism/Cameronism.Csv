@@ -1,0 +1,10 @@
+/bin/
+/obj/
+*/bin/
+*/obj/
+*/*/bin/
+*/*/obj/
+*.swp
+*.suo
+*.csproj.user
+/packages/

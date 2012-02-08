@@ -1,0 +1,11 @@
+i,Hello,Foo
+0,,Bar
+1,World,Bar
+2,,Bar
+3,World,Bar
+4,,Bar
+5,World,Bar
+6,,Bar
+7,World,Bar
+8,,Bar
+9,World,Bar
