@@ -133,12 +133,7 @@ namespace Cameronism.Csv
 							separatorEx));
 				}
 			
-				var column = columns[i];
-				var variableName = 
-					"_" + i + (column.MemberPath == null || column.MemberPath.Count == 0 ? 
-						"" : 
-						String.Join("_", column.MemberPath));
-				AddValueWriter(column);
+				AddValueWriter(columns[i]);
 			}
 			
 			// writer.WriteLine();
