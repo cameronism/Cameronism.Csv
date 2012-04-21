@@ -18,6 +18,27 @@ namespace Cameronism.Csv
 {
 	public static class Serializer
 	{
+		static Dictionary<Type, Action<IEnumerable, TextWriter>> _Delegates = new Dictionary<Type, Action<IEnumerable, TextWriter>>();
+		public static void Serialize<T>(Stream destination, IEnumerable<T> items)
+		{
+			Serialize(new StreamWriter(destination), items);
+		}
+
+		public static void Serialize<T>(TextWriter destination, IEnumerable<T> items)
+		{
+			Action<IEnumerable, TextWriter> writer;
+			lock (_Delegates)
+			{
+				if (!_Delegates.TryGetValue(typeof(T), out writer))
+				{
+					writer = Builder.BuildWriter(typeof(T), ",").Compile();
+					_Delegates.Add(typeof(T), writer);
+				}
+			}
+
+			writer.Invoke(items, destination);
+		}
+
 		public static Expression<Action<IEnumerable, TextWriter>> CreateExpression(Type type, string separator = ",")
 		{
 			return Builder.BuildWriter(type, separator);
@@ -48,6 +69,7 @@ namespace Cameronism.Csv
 		ParameterExpression itemEx;
 		ParameterExpression tmpStringEx;
 		List<Expression> body;
+		List<Expression> notNullBlock;
 		ParameterExpression _CharsToEscapeEx = Expression.Variable(typeof(char[]), "charsToEscape");
 		const string DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss.ffffff";
 
@@ -110,7 +132,16 @@ namespace Cameronism.Csv
 					Expression.Constant(GetHeadingsLine(columns, separator.ToString()), typeof(string))));
 			
 			
+			bool nullCheck = type.IsClass || Nullable.GetUnderlyingType(type) != null;
 			body = new List<Expression>();
+			if (nullCheck)
+			{
+				notNullBlock = new List<Expression>();
+			}
+			else
+			{
+				notNullBlock = body;
+			}
 			/* BEGIN LOOP BODY */
 			
 			// item = enumerator.Current;
@@ -121,12 +152,13 @@ namespace Cameronism.Csv
 						enumeratorEx,
 						"Current")));
 			
+			/* BEGIN ITEM NOT NULL BLOCK */
 			for (int i = 0; i < columns.Count; i++)
 			{
 				if (i > 0)
 				{
 					// writer.Write({separator});
-					body.Add(
+					notNullBlock.Add(
 						Expression.Call(
 							writerEx,
 							_WriteString,
@@ -137,11 +169,29 @@ namespace Cameronism.Csv
 			}
 			
 			// writer.WriteLine();
-			body.Add(
+			notNullBlock.Add(
 				Expression.Call(
 					writerEx,
 					_WriteLineTerminator));
+			/* END ITEM NOT NULL BLOCK */
 			
+			if (nullCheck)
+			{
+			    // write loop body inside an if block
+			    //if (item == null)
+			    //    writer.Write({the correct number of commas});
+			    //else
+			    //    {write values}
+			    body.Add(
+			        Expression.IfThenElse(
+			            Expression.Equal(itemEx, Expression.Constant(null, type)),
+			            Expression.Call(
+			                writerEx,
+			                _WriteLineString,
+			                Expression.Constant(String.Concat(Enumerable.Repeat(separator, columns.Count - 1)))),
+			            Expression.Block(notNullBlock)));
+			}
+
 			/* END LOOP BODY */
 			
 			// while (enumerator.MoveNext()) {body}
@@ -155,6 +205,13 @@ namespace Cameronism.Csv
 						Expression.Block(body),
 						Expression.Break(breakLabel)),
 					breakLabel));
+
+			// writer.Flush();
+			statements.Add(
+				Expression.Call(
+					writerEx,
+					"Flush",
+					null));
 			
 			return Expression.Lambda<Action<IEnumerable, TextWriter>>(
 				Expression.Block(variables, statements),
@@ -251,7 +308,7 @@ namespace Cameronism.Csv
 			if (valueTests.Any())
 			{
 				// if ({valueTests}) {successBlock}
-				body.Add(
+				notNullBlock.Add(
 					Expression.IfThen(
 						valueTests.Aggregate((t, v) => Expression.AndAlso(t, v)),
 						Expression.Block(
@@ -259,7 +316,7 @@ namespace Cameronism.Csv
 			}
 			else
 			{
-				body.AddRange(successBlock);
+				notNullBlock.AddRange(successBlock);
 			}
 		}
 
@@ -402,75 +459,5 @@ namespace Cameronism.Csv
 		{
 			
 		}
-		
-	
-		//const string TIMEZONE_PARAM = "tz";
-		
-		//static List<ValueWriter> _ValueWriters = new List<ValueWriter>
-		//{
-		//    // Dates and times
-		//    ValueWriter.Create<DateTime, TimeZoneInfo>((dt, tz) => TimeZoneInfo.ConvertTimeFromUtc(dt, tz).ToString(DATETIME_FORMAT, CultureInfo.InvariantCulture), TIMEZONE_PARAM),
-		//    ValueWriter.Create<DateTimeOffset, TimeZoneInfo>((dt, tz) => TimeZoneInfo.ConvertTime(dt, tz).ToString(DATETIME_FORMAT, CultureInfo.InvariantCulture), TIMEZONE_PARAM),
-		//    ValueWriter.Create<TimeSpan>(ts => ts.ToString("c")),
-			
-		//    // Integral types
-		//    ValueWriter.Create<sbyte>(i => i.ToString("D", CultureInfo.InvariantCulture)),
-		//    ValueWriter.Create<byte>(i => i.ToString("D", CultureInfo.InvariantCulture)),
-		//    ValueWriter.Create<short>(i => i.ToString("D", CultureInfo.InvariantCulture)),
-		//    ValueWriter.Create<ushort>(i => i.ToString("D", CultureInfo.InvariantCulture)),
-		//    ValueWriter.Create<int>(i => i.ToString("D", CultureInfo.InvariantCulture)),
-		//    ValueWriter.Create<uint>(i => i.ToString("D", CultureInfo.InvariantCulture)),
-		//    ValueWriter.Create<long>(i => i.ToString("D", CultureInfo.InvariantCulture)),
-		//    ValueWriter.Create<ulong>(i => i.ToString("D", CultureInfo.InvariantCulture)),
-		
-		//    // Floating Point types
-		//    ValueWriter.Create<float>(i => i.ToString("G", CultureInfo.InvariantCulture)),
-		//    ValueWriter.Create<double>(i => i.ToString("G", CultureInfo.InvariantCulture)),	
-			
-		//    // Finally -- just escape everything as strings
-		////	ValueWriter.Create<ValueType>(vt => String.Concat("\"", vt.ToString().Replace("\"", "\"\""), "\"")),
-		////	ValueWriter.Create<Object>(obj => obj == null ? "" : String.Concat("\"", obj.ToString().Replace("\"", "\"\""), "\"")),
-		//};
-		
-		//static HashSet<Type> _KnownTypes = new HashSet<Type>(_ValueWriters.SelectMany(vw => vw.Types).Concat(new[] { typeof(string), typeof(char) }));
 	}
-	
-	
-	//class Sample
-	//{
-	//    public Type Type { get; set; }
-	//    public string Title { get; set; }
-	//    public string Foo { get; set; }
-	//    public string Bar { get; set; }
-	//    public Stack<string> MemberPath { get; set; }
-	//}
-	
-	
-	
-	
-	
-	
-	//class ValueWriter
-	//{
-	//    public static ValueWriter Create<T>(Expression<Func<T, string>> expression)
-	//    {
-	//        return new ValueWriter(expression, null, typeof(T));
-	//    }
-		
-	//    public static ValueWriter Create<TValue, TParameter>(Expression<Func<TValue, TParameter, string>> expression, string parameterName)
-	//    {
-	//        return new ValueWriter(expression, parameterName, typeof(TValue));
-	//    }
-	
-	//    ValueWriter(LambdaExpression expression, string parameterName, params Type[] types)
-	//    {
-	//        Expression = expression;
-	//        Types = types;
-	//        ParameterName = parameterName;
-	//    }
-		
-	//    public readonly LambdaExpression Expression;
-	//    public readonly Type[] Types;
-	//    public readonly string ParameterName;
-	//}
 }

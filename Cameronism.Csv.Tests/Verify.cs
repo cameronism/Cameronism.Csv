@@ -69,8 +69,8 @@ namespace Cameronism.Csv.Tests
 		public void NullNestedMembers()
 		{
 			Approve(
-				from i in Enumerable.Range(0, 10)
-				select new
+				from i in Enumerable.Range(0, 11)
+				select i == 10 ? null : new
 				{
 					i,
 					Maybe = i % 2 == 1 ?
