@@ -13,6 +13,7 @@ using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Globalization;
+using System.Runtime.Serialization;
 
 namespace Cameronism.Csv
 {
@@ -26,13 +27,18 @@ namespace Cameronism.Csv
 
 		public static void Serialize<T>(TextWriter destination, IEnumerable<T> items)
 		{
+			Serialize(typeof(T), destination, items);
+		}
+
+		public static void Serialize(Type type, TextWriter destination, IEnumerable items)
+		{
 			Action<IEnumerable, TextWriter> writer;
 			lock (_Delegates)
 			{
-				if (!_Delegates.TryGetValue(typeof(T), out writer))
+				if (!_Delegates.TryGetValue(type, out writer))
 				{
-					writer = Builder.BuildWriter(typeof(T), ",").Compile();
-					_Delegates.Add(typeof(T), writer);
+					writer = Builder.BuildWriter(type, ",").Compile();
+					_Delegates.Add(type, writer);
 				}
 			}
 
@@ -51,7 +57,9 @@ namespace Cameronism.Csv
 		
 		public static Expression<Action<IEnumerable, TextWriter>> BuildWriter(Type type, string separator)
 		{
-			return new Builder().BuildInternal(type, separator[0]);
+			var b = new Builder();
+			b.PrepareInternalDelegates(type);
+			return b.BuildInternal(type, separator[0]);
 		}
 
 		static Type[] _SingleString = { typeof(string) };
@@ -68,7 +76,6 @@ namespace Cameronism.Csv
 		ParameterExpression writerEx;
 		ParameterExpression itemEx;
 		ParameterExpression tmpStringEx;
-		List<Expression> body;
 		List<Expression> notNullBlock;
 		ParameterExpression _CharsToEscapeEx = Expression.Variable(typeof(char[]), "charsToEscape");
 		const string DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss.ffffff";
@@ -133,19 +140,19 @@ namespace Cameronism.Csv
 			
 			
 			bool nullCheck = type.IsClass || Nullable.GetUnderlyingType(type) != null;
-			body = new List<Expression>();
+			List<Expression> loopBlock = new List<Expression>();
 			if (nullCheck)
 			{
 				notNullBlock = new List<Expression>();
 			}
 			else
 			{
-				notNullBlock = body;
+				notNullBlock = loopBlock;
 			}
-			/* BEGIN LOOP BODY */
+			/* BEGIN LOOP BLOCK */
 			
 			// item = enumerator.Current;
-			body.Add(
+			loopBlock.Add(
 				Expression.Assign(
 					itemEx,
 					Expression.Property(
@@ -177,12 +184,11 @@ namespace Cameronism.Csv
 			
 			if (nullCheck)
 			{
-			    // write loop body inside an if block
 			    //if (item == null)
 			    //    writer.Write({the correct number of commas});
 			    //else
 			    //    {write values}
-			    body.Add(
+			    loopBlock.Add(
 			        Expression.IfThenElse(
 			            Expression.Equal(itemEx, Expression.Constant(null, type)),
 			            Expression.Call(
@@ -192,7 +198,7 @@ namespace Cameronism.Csv
 			            Expression.Block(notNullBlock)));
 			}
 
-			/* END LOOP BODY */
+			/* END LOOP BLOCK */
 			
 			// while (enumerator.MoveNext()) {body}
 			var breakLabel = Expression.Label();
@@ -202,7 +208,7 @@ namespace Cameronism.Csv
 						Expression.Call(
 							enumeratorEx,
 							typeof(IEnumerator).GetMethod("MoveNext")),
-						Expression.Block(body),
+						Expression.Block(loopBlock),
 						Expression.Break(breakLabel)),
 					breakLabel));
 
@@ -366,11 +372,33 @@ namespace Cameronism.Csv
 			public PropertyInfo PropertyInfo { get; set; }
 		}
 		
-		Func<Type, bool> ShouldOmitType = type =>
+
+		Func<MemberInfo, bool> ShouldIncludeMember { get; set; }
+		Func<Type, bool> ShouldIncludeType { get; set; }
+
+		void PrepareInternalDelegates(Type type)
+		{
+			ShouldIncludeType = DefaultShouldIncludeType;
+			bool hasDataContract = type.GetCustomAttributes(typeof(DataContractAttribute), true).Any();
+			ShouldIncludeMember = hasDataContract ? (Func<MemberInfo, bool>)
+				DataContractShouldIncludeMember : DefaultShouldIncludeMember;
+		}
+
+		bool DefaultShouldIncludeType(Type type)
 		{
 			string ns = type.Namespace ?? "";
-			return ns == "System" || ns.StartsWith("System.") || type.IsArray;
-		};
+			return !(ns == "System" || ns.StartsWith("System.") || type.IsArray);
+		}
+
+		bool DefaultShouldIncludeMember(MemberInfo mi)
+		{
+			return true;
+		}
+
+		bool DataContractShouldIncludeMember(MemberInfo mi)
+		{
+			return mi.GetCustomAttributes(typeof(DataMemberAttribute), true).Any();
+		}
 		
 		IEnumerable<Column> GetColumns(Type type)
 		{
@@ -383,7 +411,7 @@ namespace Cameronism.Csv
 				};
 				yield break;
 			}
-			else if (ShouldOmitType(type))
+			else if (!ShouldIncludeType(type))
 			{
 				yield break;
 			}
@@ -391,14 +419,13 @@ namespace Cameronism.Csv
 			foreach (var fi in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
 			{
 				// FIXME other cyclical structures will still catch us
-				if (fi.FieldType == type)
+				if (fi.FieldType == type || !ShouldIncludeMember(fi))
 				{
 					continue;
 				}
 				
 				foreach (Column col in GetColumns(fi.FieldType))
 				{
-					// TODO enforce attribute presence
 					if (col.MemberPath == null)
 					{
 						col.Title = fi.Name;
@@ -413,14 +440,13 @@ namespace Cameronism.Csv
 			foreach (var pi in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
 			{
 				// FIXME other cyclical structures will still catch us
-				if (!pi.CanRead || pi.GetIndexParameters().Any() || pi.PropertyType == type)
+				if (!pi.CanRead || pi.GetIndexParameters().Any() || pi.PropertyType == type || !ShouldIncludeMember(pi))
 				{
 					continue;
 				}
 				
 				foreach (Column col in GetColumns(pi.PropertyType))
 				{
-					// TODO enforce attribute presence
 					if (col.MemberPath == null)
 					{
 						col.Title = pi.Name;
@@ -450,14 +476,5 @@ namespace Cameronism.Csv
 			typeof(string),
 			typeof(char),
 		};
-
-		
-		
-
-		[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
-		public class SummaryAttribute : Attribute
-		{
-			
-		}
 	}
 }
