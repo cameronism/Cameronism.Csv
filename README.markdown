@@ -12,7 +12,7 @@ Features
 Usage
 -------
 
-  using (var stream = File.Create("example.csv"))
-  {
-    Cameronism.Csv.Serializer.Serialize(stream, someIEnumerable);
-  }
+    using (var stream = File.Create("example.csv"))
+    {
+        Cameronism.Csv.Serializer.Serialize(stream, someIEnumerable);
+    }
