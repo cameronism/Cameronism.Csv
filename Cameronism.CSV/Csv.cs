@@ -115,6 +115,17 @@ namespace Cameronism.Csv
 						Expression.Constant('\n'), 
 						Expression.Constant('\r'), 
 						Expression.Constant('"'))));
+
+			// if (enumerableParam == null) throw new ArgumentNullException("enumerableParam");
+			statements.Add(
+				Expression.IfThen(
+					Expression.Equal(
+						untypedEnumerable,
+						Expression.Constant(null, typeof(IEnumerable))),
+					Expression.Throw(
+						Expression.New(
+							typeof(ArgumentNullException).GetConstructor(_SingleString), 
+							Expression.Constant("enumerableParam", typeof(string))))));
 			
 			// enumerable = (IEnumerable<{type})enumerableParam;
 			statements.Add(

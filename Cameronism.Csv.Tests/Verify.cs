@@ -35,6 +35,15 @@ namespace Cameronism.Csv.Tests
 			);
 		}
 
+		[Test]
+		public void RejectNullEnumerables()
+		{
+			var writer = new StringWriter { NewLine = "\r\n" };
+			var expression = Serializer.CreateExpression(typeof(string), separator: ",");
+		    var action = expression.Compile();
+
+			Assert.Throws<ArgumentNullException>(() => action(null, writer));
+		}
 
 		[Test]
 		public void Integers()
