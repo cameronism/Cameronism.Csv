@@ -117,5 +117,17 @@ namespace Cameronism.Csv.Tests
 				select baseDate.AddHours(i * .95)
 			);
 		}
+
+		[Test]
+		public void NullableInts()
+		{
+			Approve(
+				from i in Enumerable.Range(0, 24)
+				select new
+				{
+					integer = i,
+					nullable = i % 2 == 0 ? (int?)null : i
+				});
+		}
 	}
 }
