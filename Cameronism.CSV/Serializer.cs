@@ -59,10 +59,10 @@ namespace Cameronism.Csv
 			return LocalMemberInfo.FindAll(type);
 		}
 
-		public static Func<object, IList<object>> CreateFlattener(Type type)
+		public static IFlattener CreateFlattener(Type type)
 		{
 			var members = LocalMemberInfo.FindAll(type).ToList();
-			return BuildFlattener.Create(type, members);
+			return new Flattener(type, members);
 		}
 	}
 }

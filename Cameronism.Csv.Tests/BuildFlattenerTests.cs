@@ -18,7 +18,7 @@ namespace Cameronism.Csv.Tests
 		{
 			var writer = new StringWriter { NewLine = "\r\n" };
 			var flattener = Serializer.CreateFlattener(typeof(T));
-			var flatItem = flattener(item);
+			var flatItem = flattener.Flatten(item);
 
 			writer.WriteLine("= Value");
 			writer.WriteLine(JsonConvert.SerializeObject(item, Formatting.Indented));
