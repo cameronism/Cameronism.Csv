@@ -1,0 +1,9 @@
+= Value
+{
+  "Included": "foo"
+}
+
+= Flat
+[
+  "foo"
+]

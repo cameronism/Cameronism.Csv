@@ -1,0 +1,9 @@
+= Value
+{
+  "Hello": "World"
+}
+
+= Flat
+[
+  "World"
+]

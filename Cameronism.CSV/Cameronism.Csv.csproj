@@ -43,8 +43,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Csv.cs" />
+    <Compile Include="BuildFlattener.cs" />
+    <Compile Include="Serializer.cs" />
+    <Compile Include="Flattener.cs" />
+    <Compile Include="IFlattener.cs" />
+    <Compile Include="IMemberInfo.cs" />
+    <Compile Include="LocalMemberInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tree.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
