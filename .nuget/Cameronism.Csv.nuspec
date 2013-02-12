@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Cameronism.Csv</id>
+    <version>0.2.0</version>
+    <authors>cameronism</authors>
+    <owners>cameronism</owners>
+    <licenseUrl>http://opensource.org/licenses/Apache-2.0</licenseUrl>
+    <projectUrl>https://github.com/cameronism/Cameronism.Csv</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Fast CSV serializer and object flattener.</description>
+    <releaseNotes>Performance improvements and added public IFlattener interface.</releaseNotes>
+    <copyright>Copyright 2013</copyright>
+    <tags>csv</tags>
+    <dependencies>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="..\Cameronism.CSV\bin\Release\Cameronism.Csv.dll" target="lib" />
+  </files>
+</package>

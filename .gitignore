@@ -7,4 +7,5 @@
 *.swp
 *.suo
 *.csproj.user
+*.nupkg
 /packages/
