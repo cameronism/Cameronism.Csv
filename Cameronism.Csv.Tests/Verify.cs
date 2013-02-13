@@ -129,5 +129,18 @@ namespace Cameronism.Csv.Tests
 					nullable = i % 2 == 0 ? (int?)null : i
 				});
 		}
+
+		[Test]
+		public void DataMemberOrder()
+		{
+			var start = new DateTime(2010, 10, 10, 10, 10, 10, 10, DateTimeKind.Utc);
+			Approve(
+				from i in Enumerable.Range(0, 24)
+				select new LocalMemberInfoTests.DayCount
+				{
+					Date = start.AddDays(i),
+					Count = (uint)i,
+				});
+		}
 	}
 }

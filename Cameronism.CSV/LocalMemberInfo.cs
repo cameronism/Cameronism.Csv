@@ -40,7 +40,7 @@ namespace Cameronism.Csv
 
 		static bool DefaultShouldExcludeType(Type type)
 		{
-			return type.IsArray || type == typeof(DateTime) || type == typeof(DateTimeOffset);
+			return type.IsArray;
 		}
 
 		static bool DefaultShouldIncludeType(Type type)
@@ -69,8 +69,13 @@ namespace Cameronism.Csv
 			{
 				shouldExcludeType.Add(excludeType);
 			}
+			if (includeType != null)
+			{
+				shouldIncludeType.Add(includeType);
+			}
 
-			if (AnyReturnTrue(shouldExcludeType, type))
+			// bail out if the type should be included directly
+			if (AnyReturnTrue(shouldIncludeType, type))
 			{
 				yield break;
 			}
@@ -104,6 +109,16 @@ namespace Cameronism.Csv
 				)
 				.Where(mi => !AnyReturnTrue(shouldExcludeMember, mi))
 				.ToList();
+
+			if (hasDataContract)
+			{
+				members = (
+					from member in members
+					let attr = member.MemberInfo.GetCustomAttributes(typeof(DataMemberAttribute), true).Cast<DataMemberAttribute>().FirstOrDefault()
+					let order = attr == null || attr.Order < 0 ? int.MaxValue : attr.Order
+					orderby order
+					select member).ToList();
+			}
 
 			foreach (var member in members)
 			{

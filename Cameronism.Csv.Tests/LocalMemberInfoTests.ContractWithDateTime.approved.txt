@@ -1,0 +1,21 @@
+= Value
+{
+  "Date": "0001-01-01T00:00:00",
+  "Count": 42,
+  "Non": 0,
+  "Sense": 0,
+  "Ordering": 0,
+  "Has": 0,
+  "Begun": 0
+}
+
+= Members
+[
+  "Begun",
+  "Count",
+  "Date",
+  "Has",
+  "Non",
+  "Ordering",
+  "Sense"
+]

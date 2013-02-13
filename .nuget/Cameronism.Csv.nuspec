@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Cameronism.Csv</id>
-    <version>0.2.0</version>
+    <version>0.2.1</version>
     <authors>cameronism</authors>
     <owners>cameronism</owners>
     <licenseUrl>http://opensource.org/licenses/Apache-2.0</licenseUrl>
@@ -16,6 +16,6 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="..\Cameronism.CSV\bin\Release\Cameronism.Csv.dll" target="lib" />
+    <file src="..\Cameronism.CSV\bin\Release\Cameronism.Csv.dll" target="lib\net40" />
   </files>
 </package>

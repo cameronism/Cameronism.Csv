@@ -69,5 +69,37 @@ namespace Cameronism.Csv.Tests
 			Approve(new SemiDecorated { Included = "foo", Excluded = "bar" });
 		}
 
+
+		[DataContract]
+		public class DayCount
+		{
+			[DataMember(Order = 1)]
+			public DateTime Date { get; set; }
+
+			[DataMember(Order = 2)]
+			public uint Count { get; set; }
+
+			[DataMember(Order = 5)]
+			public uint Ordering { get; set; }
+
+			[DataMember(Order = 7)]
+			public uint Begun { get; set; }
+
+			[DataMember(Order = 4)]
+			public uint Sense { get; set; }
+
+			[DataMember(Order = 6)]
+			public uint Has { get; set; }
+
+			[DataMember(Order = 3)]
+			public uint Non { get; set; }
+
+		}
+
+		[Test]
+		public void ContractWithDateTime()
+		{
+			Approve(new DayCount { Date = DateTime.MinValue, Count = 42 });
+		}
 	}
 }
