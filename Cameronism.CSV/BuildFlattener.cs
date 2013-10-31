@@ -103,7 +103,7 @@ namespace Cameronism.Csv
 
 		static bool IsNullable(Type type)
 		{
-			return type.IsClass || Nullable.GetUnderlyingType(type) != null;
+			return type.IsClass || type.IsInterface || Nullable.GetUnderlyingType(type) != null;
 		}
 
 		private static readonly IList<IMemberInfo> _EmptyMemberInfo = new List<IMemberInfo>();

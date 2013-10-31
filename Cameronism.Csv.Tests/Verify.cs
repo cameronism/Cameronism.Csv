@@ -91,6 +91,22 @@ namespace Cameronism.Csv.Tests
 		}
 
 		[Test]
+		public void NullNestedInterfaceMembers()
+		{
+			Approve(
+				from i in Enumerable.Range(0, 11)
+				select i == 10 ? null : new
+				{
+					i,
+					Maybe = (IEnumerable)(i % 2 == 1 ?
+						"interfaces can be null too" :
+						null),
+					Foo = "Bar"
+				}
+			);
+		}
+
+		[Test]
 		public void QuotedValue()
 		{
 			Approve(

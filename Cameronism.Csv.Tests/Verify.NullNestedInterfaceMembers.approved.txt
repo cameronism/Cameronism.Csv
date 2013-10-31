@@ -1,0 +1,12 @@
+i,Maybe,Foo
+0,,Bar
+1,interfaces can be null too,Bar
+2,,Bar
+3,interfaces can be null too,Bar
+4,,Bar
+5,interfaces can be null too,Bar
+6,,Bar
+7,interfaces can be null too,Bar
+8,,Bar
+9,interfaces can be null too,Bar
+,,
