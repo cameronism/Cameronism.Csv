@@ -86,11 +86,25 @@ namespace Cameronism.Csv
 				_Members = members,
 				_Separator = separator,
 			};
-			return builder.CreateWriterDelegate();
+			return (Expression<Action<IEnumerable, TextWriter>>)builder.CreateWriterDelegate();
 		}
+
+		public static Expression<Action<IEnumerable, Array, TextWriter>> CreateWriterExpression(Type type, Type columnType, IList<IMemberInfo> members, char separator)
+		{
+			var builder = new BuildFlattener
+			{
+				_Type = type,
+				_ColumnType = columnType,
+				_Members = members,
+				_Separator = separator,
+			};
+			return (Expression<Action<IEnumerable, Array, TextWriter>>)builder.CreateWriterDelegate();
+		}
+
 
 		private Type _Type;
 		private IList<IMemberInfo> _Members;
+		private Type _ColumnType;
 
 		private BuildFlattener()
 		{
@@ -258,9 +272,14 @@ namespace Cameronism.Csv
 			.FirstOrDefault(mi => mi.Name == "IndexOf" && mi.IsGenericMethod && mi.GetParameters().Length == 2)
 			.MakeGenericMethod(typeof(char));
 
-		Expression<Action<IEnumerable, TextWriter>> CreateWriterDelegate()
+		LambdaExpression CreateWriterDelegate()
 		{
 			var untypedEnumerable = Expression.Parameter(typeof(IEnumerable), "enumerableParam");
+			ParameterExpression untypedArray = null;
+			if (_ColumnType != null)
+			{
+				untypedArray = Expression.Parameter(typeof(Array), "arrayParam");
+			}
 			_TextWriterEx = Expression.Parameter(typeof(TextWriter), "textWriter");
 
 			//Type enumerableType = typeof(IEnumerable<>).MakeGenericType(_Type);
@@ -271,6 +290,8 @@ namespace Cameronism.Csv
 			_TmpStringEx = Expression.Variable(typeof(string), "tmpString");
 			_CharsToEscape = Expression.Variable(typeof(char[]), "charsToEscape");
 			_FormatProvider = Expression.Variable(typeof(IFormatProvider), "formatProvider");
+			ParameterExpression extraColumnsEx = null;
+			ParameterExpression columnIndexEx = null;
 
 			var body = new List<Expression>();
 			var loop = new List<Expression>();
@@ -285,6 +306,28 @@ namespace Cameronism.Csv
 				_FormatProvider,
 			};
 
+			if (_ColumnType != null)
+			{
+				var arrayType = typeof(KeyValuePair<,>).MakeGenericType(typeof(string), _ColumnType).MakeArrayType();
+				extraColumnsEx = Expression.Variable(arrayType, "extraColumns");
+				_Variables.Add(extraColumnsEx);
+
+				columnIndexEx = Expression.Variable(typeof(int), "columnIndex");
+				_Variables.Add(columnIndexEx);
+
+				body.Add(
+					Expression.Assign(
+						extraColumnsEx,
+						Expression.Convert(untypedArray, arrayType)));
+
+				body.Add(
+					Expression.IfThen(
+						Expression.Equal(extraColumnsEx, Expression.Constant(null, arrayType)),
+						Expression.Assign(
+							extraColumnsEx,
+							Expression.NewArrayBounds(arrayType.GetElementType(), Expression.Constant(0)))));
+			}
+
 			int memberIndex = 0;
 			var memberTree = 
 				Tree<IMemberInfo, KeyValuePair<int, IMemberInfo>>.Create(
@@ -292,7 +335,7 @@ namespace Cameronism.Csv
 					kvp => kvp.Value.MemberPath ?? _EmptyMemberInfo,
 					new MemberInfoComparer());
 
-			if (memberIndex == 0)
+			if (memberIndex == 0 && _ColumnType == null)
 			{
 				memberTree = Tree<IMemberInfo, KeyValuePair<int, IMemberInfo>>.CreateSingleton(
 					new KeyValuePair<int,IMemberInfo>(
@@ -337,8 +380,13 @@ namespace Cameronism.Csv
 			body.Add(
 				Expression.Call(
 					_TextWriterEx,
-					typeof(TextWriter).GetMethod("WriteLine", new[] { typeof(string) }),
+					_ColumnType == null ? typeof(TextWriter).GetMethod("WriteLine", new[] { typeof(string) }) : _WriteString,
 					Expression.Constant(GetHeadingsLine(_Members, _Separator), typeof(string))));
+
+			if (_ColumnType != null)
+			{
+				WriteDynamicColumnHeadings(body, extraColumnsEx, columnIndexEx);
+			}
 
 			// enumerator = ((IEnumerable<>)enumerable).GetEnumerator();
 			body.Add(
@@ -360,6 +408,11 @@ namespace Cameronism.Csv
 						"Current")));
 
 			GetMemberValues(memberTree, itemEx, loop, MemberToTextWriter, OnWriterNodeNull);
+
+			if (_ColumnType != null)
+			{
+				WriteDynamicColumns(itemEx, loop, extraColumnsEx, columnIndexEx);
+			}
 
 			// writer.WriteLine();
 			loop.Add(
@@ -399,9 +452,107 @@ namespace Cameronism.Csv
 					"Flush",
 					null));
 
-			return Expression.Lambda<Action<IEnumerable, TextWriter>>(
-				Expression.Block(_Variables, body),
-				untypedEnumerable, _TextWriterEx);
+			if (_ColumnType == null)
+			{
+				return Expression.Lambda<Action<IEnumerable, TextWriter>>(
+					Expression.Block(_Variables, body),
+					untypedEnumerable, _TextWriterEx);
+			}
+			else
+			{
+				return Expression.Lambda<Action<IEnumerable, Array, TextWriter>>(
+					Expression.Block(_Variables, body),
+					untypedEnumerable, untypedArray, _TextWriterEx);
+			}
+		}
+
+		void WriteDynamicColumns(ParameterExpression itemEx, List<Expression> block, ParameterExpression extraColumnsEx, ParameterExpression columnIndexEx)
+		{
+			var get_Item = itemEx.Type.GetMethod("get_Item", BindingFlags.Public | BindingFlags.Instance, null, new[] { _ColumnType }, null);
+
+			if (get_Item == null) throw new ArgumentException(_Type.Name + " does not have an indexer of type " + _ColumnType.Name);
+
+			var member = new LocalMemberInfo(get_Item);
+			var loop = new List<Expression>();
+
+			var tmp = GetTemporary(member);
+			var value = Expression.Assign(
+				tmp,
+				Expression.Call(
+					itemEx,
+					get_Item,
+					Expression.Property(
+						Expression.ArrayAccess(extraColumnsEx, columnIndexEx),
+						"Value")));
+
+			loop.Add(value);
+			MemberToTextWriter(loop, member, _Members.Count, value);
+			loop.Add(Expression.PreIncrementAssign(columnIndexEx));
+
+			block.Add(
+				Expression.Assign(
+					columnIndexEx,
+					Expression.Constant(0)));
+
+			var breakLabel = Expression.Label();
+			block.Add(
+				Expression.Loop(
+					Expression.IfThenElse(
+						Expression.LessThan(columnIndexEx, Expression.ArrayLength(extraColumnsEx)),
+						Expression.Block(loop),
+						Expression.Break(breakLabel)),
+					breakLabel));
+		}
+
+		void WriteDynamicColumnHeadings(List<Expression> block, ParameterExpression extraColumnsEx, ParameterExpression columnIndexEx)
+		{
+			var loop = new List<Expression>();
+
+			var value = Expression.Assign(
+				_TmpStringEx,
+				Expression.Property(
+					Expression.ArrayAccess(extraColumnsEx, columnIndexEx),
+					"Key"));
+
+			var writeSeparator = Expression.Call(
+					_TextWriterEx,
+					_WriteChar,
+					Expression.Constant(_Separator));
+
+			if (_Members.Count > 0)
+			{
+				loop.Add(writeSeparator);
+			}
+			else
+			{
+				loop.Add(
+					Expression.IfThen(
+						Expression.NotEqual(columnIndexEx, Expression.Constant(0)),
+						writeSeparator));
+			}
+
+			loop.Add(value);
+			WriteValue(loop, typeof(string), true, _TmpStringEx);
+			loop.Add(Expression.PreIncrementAssign(columnIndexEx));
+
+			block.Add(
+				Expression.Assign(
+					columnIndexEx,
+					Expression.Constant(0)));
+
+			var breakLabel = Expression.Label();
+			block.Add(
+				Expression.Loop(
+					Expression.IfThenElse(
+						Expression.LessThan(columnIndexEx, Expression.ArrayLength(extraColumnsEx)),
+						Expression.Block(loop),
+						Expression.Break(breakLabel)),
+					breakLabel));
+
+			block.Add(
+				Expression.Call(
+					_TextWriterEx,
+					typeof(TextWriter).GetMethod("WriteLine", Type.EmptyTypes)));
 		}
 
 		static string GetHeadingsLine(IList<IMemberInfo> _Members, char _Separator)
@@ -510,9 +661,14 @@ namespace Cameronism.Csv
 						ValueToString(member.Type, value, out needsEscapeCheck)));
 			}
 
+			WriteValue(block, member.Type, needsEscapeCheck, tempVar);
+		}
+
+		private void WriteValue(List<Expression> block, Type type, bool needsEscapeCheck, Expression tempVar)
+		{
 			if (needsEscapeCheck)
 			{
-				Expression condition = 
+				Expression condition =
 					Expression.NotEqual(
 						Expression.Call(
 							_TmpStringEx,
@@ -520,12 +676,12 @@ namespace Cameronism.Csv
 							_CharsToEscape),
 						Expression.Constant(-1, typeof(int)));
 
-				if (IsNullable(member.Type))
+				if (IsNullable(type))
 				{
 					condition = Expression.AndAlso(
 						Expression.NotEqual(
 							tempVar,
-							Expression.Constant(null, member.Type)),
+							Expression.Constant(null, type)),
 						condition);
 				}
 
@@ -540,8 +696,8 @@ namespace Cameronism.Csv
 								_StringConcat3,
 								Expression.Constant("\""),
 								Expression.Call(
-									_TmpStringEx, 
-									_StringReplace, 
+									_TmpStringEx,
+									_StringReplace,
 									Expression.Constant("\""),
 									Expression.Constant("\"\"")),
 								Expression.Constant("\"")))));

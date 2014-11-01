@@ -162,6 +162,12 @@ namespace Cameronism.Csv
 			_MemberPath = path;
 		}
 
+		public LocalMemberInfo(MethodInfo mi)
+		{
+			_Name = mi.Name;
+			_Type = mi.ReturnType;
+		}
+
 		readonly string _Name;
 		public string Name { get { return _Name; } }
 
