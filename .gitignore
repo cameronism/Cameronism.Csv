@@ -9,3 +9,5 @@
 *.csproj.user
 *.nupkg
 /packages/
+Cameronism.Csv.Tests/*.received.txt
+TestResult.xml
