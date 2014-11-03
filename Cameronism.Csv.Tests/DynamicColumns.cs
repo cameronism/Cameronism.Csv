@@ -31,9 +31,9 @@ namespace Cameronism.Csv.Tests
 		}
 
 		#region thing
-		class Thing<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
+		class Thing1<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
 		{
-			public Thing(string stuff)
+			public Thing1(string stuff)
 			{
 				Stuff = stuff;
 			}
@@ -65,20 +65,71 @@ namespace Cameronism.Csv.Tests
 				return ((System.Collections.IEnumerable)_Things).GetEnumerator();
 			}
 		}
+
+		class Thing0<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
+		{
+			public void Add(TKey key, TValue value)
+			{
+				_Things[key] = value;
+			}
+
+			public TValue this[TKey key]
+			{
+				get
+				{
+					return _Things[key];
+				}
+			}
+
+			private Dictionary<TKey, TValue> _Things = new Dictionary<TKey,TValue>();
+
+			public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
+			{
+				return _Things.GetEnumerator();
+			}
+
+			System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+			{
+				return ((System.Collections.IEnumerable)_Things).GetEnumerator();
+			}
+		}
 		#endregion
 
 
 		[Test]
-		public void Thing1()
+		public void TryThing1()
 		{
 			Approve(
 				new[] {
-						new Thing<int, int>("t1")
+						new Thing1<int, int>("t1")
 						{
 							{ 1, 1 },
 							{ 2, 2 },
 						},
-						new Thing<int, int>("t2")
+						new Thing1<int, int>("t2")
+						{
+							{ 1, 10 },
+							{ 2, 20 },
+						},
+					},
+				new Dictionary<string, int>
+				{
+					{ "one", 1 },
+					{ "two", 2 },
+				});
+		}
+
+		[Test]
+		public void TryThing0()
+		{
+			Approve(
+				new[] {
+						new Thing0<int, int>
+						{
+							{ 1, 1 },
+							{ 2, 2 },
+						},
+						new Thing0<int, int>
 						{
 							{ 1, 10 },
 							{ 2, 20 },

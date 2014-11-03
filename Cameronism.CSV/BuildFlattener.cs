@@ -233,7 +233,7 @@ namespace Cameronism.Csv
 					GetMemberValues(child, variable, innerBlock, writeValue, onNodeNull);
 				}
 
-				if (IsNullable(variable.Type))
+				if (IsNullable(variable.Type) && innerBlock.Count > 0)
 				{
 					Expression condition = Expression.NotEqual(variable, Expression.Constant(null, variable.Type));
 					Expression ifTrue = Expression.Block(innerBlock);
@@ -407,7 +407,7 @@ namespace Cameronism.Csv
 						enumeratorEx,
 						"Current")));
 
-			GetMemberValues(memberTree, itemEx, loop, MemberToTextWriter, OnWriterNodeNull);
+			GetMemberValues(memberTree, itemEx, loop, (a,b,c,d) => MemberToTextWriter(a,b,c,d), OnWriterNodeNull);
 
 			if (_ColumnType != null)
 			{
@@ -486,7 +486,7 @@ namespace Cameronism.Csv
 						"Value")));
 
 			loop.Add(value);
-			MemberToTextWriter(loop, member, _Members.Count, value);
+			MemberToTextWriter(loop, member, _Members.Count, value, Expression.NotEqual(columnIndexEx, Expression.Constant(0)));
 			loop.Add(Expression.PreIncrementAssign(columnIndexEx));
 
 			block.Add(
@@ -599,7 +599,7 @@ namespace Cameronism.Csv
 					String.Concat(Enumerable.Repeat(_Separator, separatorCount))));
 		}
 
-		void MemberToTextWriter(List<Expression> block, IMemberInfo member, int memberIndex, Expression value)
+		void MemberToTextWriter(List<Expression> block, IMemberInfo member, int memberIndex, Expression value, Expression needComma = null)
 		{
 			if (memberIndex != 0)
 			{
@@ -609,6 +609,17 @@ namespace Cameronism.Csv
 						_TextWriterEx,
 						_WriteChar,
 						Expression.Constant(_Separator)));
+			}
+			else if (needComma != null)
+			{
+				// if (expression) writer.Write(',');
+				block.Add(
+					Expression.IfThen(
+						needComma,
+						Expression.Call(
+							_TextWriterEx,
+							_WriteChar,
+							Expression.Constant(_Separator))));
 			}
 
 			bool needsEscapeCheck;
