@@ -10,7 +10,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Fast CSV serializer and object flattener.</description>
     <releaseNotes>Performance improvements and added public IFlattener interface. Check interfaces for null too.</releaseNotes>
-    <copyright>Copyright 2013</copyright>
+    <copyright>Copyright 2014</copyright>
     <tags>csv</tags>
     <dependencies>
     </dependencies>
