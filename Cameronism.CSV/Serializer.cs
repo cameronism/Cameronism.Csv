@@ -65,6 +65,11 @@ namespace Cameronism.Csv
 			Serialize(typeof(T), destination, items);
 		}
 
+		public static void Serialize<TItem, TColumn>(Stream destination, IEnumerable<TItem> items, KeyValuePair<string, TColumn>[] columns)
+		{
+			Serialize(new StreamWriter(destination), items, columns);
+		}
+
 		public static void Serialize<TItem, TColumn>(TextWriter destination, IEnumerable<TItem> items, KeyValuePair<string, TColumn>[] columns)
 		{
 			Action<IEnumerable, Array, TextWriter> writer;
