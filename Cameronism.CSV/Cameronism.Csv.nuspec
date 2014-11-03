@@ -9,7 +9,7 @@
     <projectUrl>https://github.com/cameronism/Cameronism.Csv</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Fast CSV serializer and object flattener.</description>
-    <releaseNotes>Performance improvements and added public IFlattener interface. Check interfaces for null too.</releaseNotes>
+    <releaseNotes>Support dynamic columns.</releaseNotes>
     <copyright>Copyright 2014</copyright>
     <tags>csv</tags>
     <dependencies>
