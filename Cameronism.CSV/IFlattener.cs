@@ -1,5 +1,5 @@
 ﻿/* Cameronism.Csv
- * Copyright © 2014 Cameronism.com.  All Rights Reserved.
+ * Copyright © 2016 Cameronism.com.  All Rights Reserved.
  * 
  * Apache License 2.0 - http://www.apache.org/licenses/LICENSE-2.0
  */
