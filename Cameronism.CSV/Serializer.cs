@@ -72,14 +72,19 @@ namespace Cameronism.Csv
 
 		public static void Serialize<TItem, TColumn>(TextWriter destination, IEnumerable<TItem> items, KeyValuePair<string, TColumn>[] columns)
 		{
+			Serialize(typeof(TItem), typeof(TColumn), destination, items, columns);
+		}
+
+		public static void Serialize(Type itemType, Type columnType, TextWriter destination, IEnumerable items, Array columns)
+		{
 			Action<IEnumerable, Array, TextWriter> writer;
-			var pair = new TypePair(typeof(TItem), typeof(TColumn));
+			var pair = new TypePair(itemType, columnType);
 			lock (_Delegates)
 			{
 				if (!_DelegatesDynamic.TryGetValue(pair, out writer))
 				{
-					var members = LocalMemberInfo.FindAll(typeof(TItem)).ToList();
-					var expression = BuildFlattener.CreateWriterExpression(typeof(TItem), typeof(TColumn), members, ',');
+					var members = LocalMemberInfo.FindAll(itemType).ToList();
+					var expression = BuildFlattener.CreateWriterExpression(itemType, columnType, members, ',');
 					writer = expression.Compile();
 					_DelegatesDynamic.Add(pair, writer);
 				}
@@ -125,9 +130,13 @@ namespace Cameronism.Csv
 
 		public static IFlattener CreateFlattener<TValue, TColumn>(KeyValuePair<string, TColumn>[] columns)
 		{
-			var type = typeof(TValue);
-			var members = LocalMemberInfo.FindAll(type).ToList();
-			return new Flattener(type, members, typeof(TColumn), columns);
+			return CreateFlattener(typeof(TValue), typeof(TColumn), columns);
+		}
+
+		public static IFlattener CreateFlattener(Type itemType, Type columnType, Array columns)
+		{
+			var members = LocalMemberInfo.FindAll(itemType).ToList();
+			return new Flattener(itemType, members, columnType, columns);
 		}
 	}
 }
