@@ -44,6 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BuildFlattener.cs" />
+    <Compile Include="CsvIgnoreAttribute.cs" />
     <Compile Include="Serializer.cs" />
     <Compile Include="Flattener.cs" />
     <Compile Include="IFlattener.cs" />

@@ -33,6 +33,8 @@ namespace Cameronism.Csv
 			typeof(char),
 		};
 
+        static Func<IMemberInfo, bool> _CsvIgnore = mi => mi.MemberInfo.GetCustomAttributes(typeof(CsvIgnoreAttribute), true).Any();
+
 		static bool AnyReturnTrue<T>(IEnumerable<Func<T, bool>> funcs, T value)
 		{
 			return funcs.Any(func => func(value));
@@ -61,7 +63,7 @@ namespace Cameronism.Csv
 			Func<Type, bool> includeType = null,
 			Func<IMemberInfo, bool> excludeMember = null)
 		{
-			var shouldExcludeMember = new List<Func<IMemberInfo, bool>>();
+			var shouldExcludeMember = new List<Func<IMemberInfo, bool>> { _CsvIgnore };
 			var shouldExcludeType = new List<Func<Type, bool>> { DefaultShouldExcludeType };
 			var shouldIncludeType = new List<Func<Type, bool>> { DefaultShouldIncludeType };
 

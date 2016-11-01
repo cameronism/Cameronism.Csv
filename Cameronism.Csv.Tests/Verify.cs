@@ -10,12 +10,24 @@ using System.Text;
 using System.IO;
 using System.Collections;
 using NUnit.Framework;
+using System.Runtime.Serialization;
 
 namespace Cameronism.Csv.Tests
 {
 	[TestFixture]
 	public class Verify
 	{
+        [DataContract]
+        class SomeDataTransferObject
+        {
+            [DataMember]
+            public int Foo { get; set; }
+
+            [DataMember, CsvIgnore]
+            public int Bar { get; set; }
+        }
+
+
 		static void Approve<T>(IEnumerable<T> enumerable)
 		{
 			var writer = new StringWriter { NewLine = "\r\n" };
@@ -157,6 +169,18 @@ namespace Cameronism.Csv.Tests
 					Date = start.AddDays(i),
 					Count = (uint)i,
 				});
+		}
+
+		[Test]
+		public void Ignore()
+		{
+            Approve(
+                from i in Enumerable.Range(0, 24)
+                select new SomeDataTransferObject
+                {
+                    Bar = i,
+                    Foo = i,
+                });
 		}
 	}
 }
