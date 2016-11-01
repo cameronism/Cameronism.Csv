@@ -71,5 +71,40 @@ namespace Cameronism.Csv.Tests
 		{
 			Approve(1);
 		}
+
+        class C<T>
+        {
+            public int Foo { get; set; }
+            public int this[T index]
+            {
+                get { return index.ToString().Length; }
+            }
+        }
+
+        private void FlattenIt<T>(StringWriter writer, C<T> item, KeyValuePair<string, T> column)
+        {
+            var flattener = Serializer.CreateFlattener<C<T>, T>(new[] { column });
+
+            writer.WriteLine("= Columns");
+            foreach (var mi in flattener.Members)
+            {
+                writer.WriteLine(mi.Name);
+            }
+
+			writer.WriteLine("= Values");
+            foreach (var o in flattener.Flatten(item))
+            {
+                writer.WriteLine(o);
+            }
+        }
+		[Test]
+		public void FlattenerWithExtraColumns()
+		{
+			var writer = new StringWriter { NewLine = "\r\n" };
+            FlattenIt(writer, new C<int> { Foo = 42 }, new KeyValuePair<string, int>("Eleven", 11));
+            FlattenIt(writer, new C<string> { Foo = 42 }, new KeyValuePair<string, string>("One", "one"));
+            FlattenIt(writer, new C<DayOfWeek> { Foo = 42 }, new KeyValuePair<string, DayOfWeek>("Today", DayOfWeek.Tuesday));
+			ApprovalTests.Approvals.Approve(writer);
+		}
 	}
 }

@@ -46,18 +46,18 @@ namespace Cameronism.Csv
 
 		static readonly Func<object, IList<object>> _SingleValueDelegate = val => new[] { val };
 
-		public static Func<object, IList<object>> Create(Type type, IList<IMemberInfo> members)
+		public static Func<object, IList<object>> Create(Type type, IList<IMemberInfo> members, Type columnType, Array columns)
 		{
 			if (IsNullOrEmpty(members))
 			{
 				return _SingleValueDelegate;
 			}
 
-			var expression = CreateExpression(type, members);
+			var expression = CreateExpression(type, members, columnType, columns);
 			return expression.Compile();
 		}
 
-		public static Expression<Func<object, IList<object>>> CreateExpression(Type type, IList<IMemberInfo> members)
+		public static Expression<Func<object, IList<object>>> CreateExpression(Type type, IList<IMemberInfo> members, Type columnType, Array columns)
 		{
 			if (IsNullOrEmpty(members))
 			{
@@ -68,8 +68,9 @@ namespace Cameronism.Csv
 			{
 				_Type = type,
 				_Members = members,
+                _ColumnType = columnType,
 			};
-			return builder.CreateDelegate();
+			return builder.CreateDelegate(columns);
 		}
 
 		public static Action<IEnumerable, TextWriter> CreateWriter(Type type, IList<IMemberInfo> members, char separator)
@@ -125,7 +126,7 @@ namespace Cameronism.Csv
 		private ParameterExpression _ResultEx;
 		private List<ParameterExpression> _Variables;
 
-		Expression<Func<object, IList<object>>> CreateDelegate()
+		Expression<Func<object, IList<object>>> CreateDelegate(Array columns)
 		{
 			var body = new List<Expression>();
 
@@ -133,6 +134,7 @@ namespace Cameronism.Csv
 			var valueEx = Expression.Variable(_Type, "value");
 			_ResultEx = Expression.Variable(typeof(object[]), "result");
 			_Variables = new List<ParameterExpression> { valueEx, _ResultEx };
+            var indexer = columns != null ? GetIndexer(_Type) : null;
 
 
 			int memberIndex = 0;
@@ -142,6 +144,7 @@ namespace Cameronism.Csv
 					kvp => kvp.Value.MemberPath ?? _EmptyMemberInfo,
 					new MemberInfoComparer());
 
+            var extraCount = columns == null ? 0 : columns.Length;
 
 			// value = ({_Type})param;
 			body.Add(
@@ -151,15 +154,40 @@ namespace Cameronism.Csv
 						paramEx,
 						_Type)));
 
-			// result = new object[{memberIndex}];
+			// result = new object[{memberIndex + extraCount}];
 			body.Add(
 				Expression.Assign(
 					_ResultEx,
 					Expression.New(
 						typeof(object[]).GetConstructor(new[] { typeof(int) }),
-						Expression.Constant(memberIndex, typeof(int)))));
+						Expression.Constant(memberIndex + extraCount, typeof(int)))));
 
 			GetMemberValues(memberTree, valueEx, body, MemberToResult);
+
+            if (indexer != null)
+            {
+                var ix = memberIndex;
+                var valueGetter = typeof(KeyValuePair<,>).MakeGenericType(new[] { typeof(string), _ColumnType })
+                    .GetProperty("Value")
+                    .GetGetMethod();
+                var emptyObj = new object[0];
+
+                foreach (var kvp in columns)
+                {
+                    // key = kvp.Value
+                    var key = Expression.Constant(valueGetter.Invoke(kvp, emptyObj));
+
+                    // result[{ix}] = (object)value[{key}];
+                    body.Add(
+                        Expression.Assign(
+                            Expression.ArrayAccess(_ResultEx, Expression.Constant(ix)),
+                            Expression.Convert(
+                                Expression.Call(valueEx, indexer, key),
+                                typeof(object))));
+
+                    ix++;
+                }
+            }
 
 			// return (IList<object>)result;
 			body.Add(
@@ -466,12 +494,17 @@ namespace Cameronism.Csv
 			}
 		}
 
-		void WriteDynamicColumns(ParameterExpression itemEx, List<Expression> block, ParameterExpression extraColumnsEx, ParameterExpression columnIndexEx)
-		{
-			var get_Item = itemEx.Type.GetMethod("get_Item", BindingFlags.Public | BindingFlags.Instance, null, new[] { _ColumnType }, null);
+        MethodInfo GetIndexer(Type type)
+        {
+			var get_Item = type.GetMethod("get_Item", BindingFlags.Public | BindingFlags.Instance, null, new[] { _ColumnType }, null);
 
 			if (get_Item == null) throw new ArgumentException(_Type.Name + " does not have an indexer of type " + _ColumnType.Name);
+            return get_Item;
+        }
 
+		void WriteDynamicColumns(ParameterExpression itemEx, List<Expression> block, ParameterExpression extraColumnsEx, ParameterExpression columnIndexEx)
+		{
+            var get_Item = GetIndexer(itemEx.Type);
 			var member = new LocalMemberInfo(get_Item);
 			var loop = new List<Expression>();
 

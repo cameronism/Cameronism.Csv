@@ -122,5 +122,12 @@ namespace Cameronism.Csv
 			var members = LocalMemberInfo.FindAll(type).ToList();
 			return new Flattener(type, members);
 		}
+
+		public static IFlattener CreateFlattener<TValue, TColumn>(KeyValuePair<string, TColumn>[] columns)
+		{
+			var type = typeof(TValue);
+			var members = LocalMemberInfo.FindAll(type).ToList();
+			return new Flattener(type, members, typeof(TColumn), columns);
+		}
 	}
 }
