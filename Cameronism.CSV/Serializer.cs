@@ -1,5 +1,5 @@
 ﻿/* Cameronism.Csv
- * Copyright © 2016 Cameronism.com.  All Rights Reserved.
+ * Copyright © 2018 Cameronism.com.  All Rights Reserved.
  * 
  * Apache License 2.0 - http://www.apache.org/licenses/LICENSE-2.0
  */
@@ -117,6 +117,13 @@ namespace Cameronism.Csv
             var handler = new DataReaderHandler<T>(',');
             var writers = handler.GetWriters(reader);
             handler.Serialize(reader, writers, destination);
+		}
+
+		public static void Serialize(TextWriter destination, DataTable table)
+		{
+            var handler = new DataTableHandler(',');
+            var writers = handler.GetWriters(table);
+            handler.Serialize(table, writers, destination);
 		}
 
         public static Expression<Action<IEnumerable, TextWriter>> CreateExpression(Type type, string separator = ",")

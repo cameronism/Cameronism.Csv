@@ -286,7 +286,7 @@ namespace Cameronism.Csv
 		private ParameterExpression _CharsToEscape; // new[] { ',', '"', '\r', '\n' }
 		private ParameterExpression _FormatProvider;
 
-		readonly string _DateTimeFormat = "yyyy-MM-dd HH:mm:ss.ffffff";
+		internal const string DateTimeFormat = "yyyy-MM-dd HH:mm:ss.ffffff";
 
 		static readonly MethodInfo _WriteChar = typeof(TextWriter).GetMethod("Write", new[] { typeof(char) });
 		static readonly MethodInfo _WriteString = typeof(TextWriter).GetMethod("Write", new[] { typeof(string) });
@@ -806,7 +806,7 @@ namespace Cameronism.Csv
 					return Expression.Call(
 						value,
 						method,
-						Expression.Constant(_DateTimeFormat),
+						Expression.Constant(DateTimeFormat),
 						_FormatProvider);
 				}
 				case TypeCode.UInt16:
