@@ -14,6 +14,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Globalization;
 using System.Runtime.Serialization;
+using System.Data;
 
 namespace Cameronism.Csv
 {
@@ -110,7 +111,15 @@ namespace Cameronism.Csv
 			writer.Invoke(items, destination);
 		}
 
-		public static Expression<Action<IEnumerable, TextWriter>> CreateExpression(Type type, string separator = ",")
+		public static void Serialize<T>(TextWriter destination, T reader)
+            where T : IDataReader
+		{
+            var handler = new DataReaderHandler<T>(',');
+            var writers = handler.GetWriters(reader);
+            handler.Serialize(reader, writers, destination);
+		}
+
+        public static Expression<Action<IEnumerable, TextWriter>> CreateExpression(Type type, string separator = ",")
 		{
 			var members = LocalMemberInfo.FindAll(type).ToList();
 			var expression = BuildFlattener.CreateWriterExpression(type, members, ',');

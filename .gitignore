@@ -8,6 +8,8 @@
 *.suo
 *.csproj.user
 *.nupkg
+*.bak
 /packages/
 Cameronism.Csv.Tests/*.received.txt
 TestResult.xml
+.vs/

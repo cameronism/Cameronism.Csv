@@ -63,6 +63,7 @@
   <ItemGroup>
     <Compile Include="Attributes.cs" />
     <Compile Include="BuildFlattenerTests.cs" />
+    <Compile Include="DataReaderTests.cs" />
     <Compile Include="DynamicColumns.cs" />
     <Compile Include="LocalMemberInfoTests.cs" />
     <Compile Include="Verify.cs" />
