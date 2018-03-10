@@ -11,12 +11,12 @@ using System.Text;
 
 namespace Cameronism.Csv
 {
-	public interface IMemberInfo
-	{
-		string Name { get; }
-		Type Type { get; }
-		MemberInfo MemberInfo { get; }
-		IList<IMemberInfo> MemberPath { get; }
-	}
+    public interface IMemberInfo
+    {
+        string Name { get; }
+        Type Type { get; }
+        MemberInfo MemberInfo { get; }
+        IList<IMemberInfo> MemberPath { get; }
+    }
 
 }

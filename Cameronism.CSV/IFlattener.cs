@@ -11,10 +11,10 @@ using System.Text;
 
 namespace Cameronism.Csv
 {
-	public interface IFlattener
-	{
-		Type Type { get; }
-		IList<IMemberInfo> Members { get; }
-		IList<object> Flatten(object item);
-	}
+    public interface IFlattener
+    {
+        Type Type { get; }
+        IList<IMemberInfo> Members { get; }
+        IList<object> Flatten(object item);
+    }
 }
