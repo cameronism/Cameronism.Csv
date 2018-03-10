@@ -21,6 +21,7 @@ namespace Cameronism.Csv
         protected abstract int GetFieldCount(TTable reader);
         protected abstract Type GetFieldType(TTable reader, int i);
         protected abstract Guid GetGuid(TRow reader, int i);
+        protected abstract byte[] GetByteArray(TRow reader, int i);
         protected abstract DateTime GetDateTime(TRow reader, int i);
         protected abstract bool GetBoolean(TRow reader, int i);
         protected abstract decimal GetDecimal(TRow reader, int i);
@@ -91,6 +92,9 @@ namespace Cameronism.Csv
                     case "System.DateTime":
                         writer = WriteDateTime;
                         break;
+                    case "System.Byte[]":
+                        writer = WriteBytes;
+                        break;
                     default:
                         throw new NotImplementedException();
 
@@ -105,6 +109,13 @@ namespace Cameronism.Csv
         {
             var value = GetGuid(reader, index);
             var s = value.ToString();
+            destination.Write(s);
+        }
+
+        private void WriteBytes(TextWriter destination, TRow reader, int index)
+        {
+            var value = GetByteArray(reader, index);
+            var s = Convert.ToBase64String(value);
             destination.Write(s);
         }
 

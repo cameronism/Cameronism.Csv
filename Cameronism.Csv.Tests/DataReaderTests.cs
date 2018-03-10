@@ -40,5 +40,11 @@ namespace Cameronism.Csv.Tests
         {
             ExecuteReader("select 'ba\nr\"' as foo, 1 as one, null as n");
         }
+
+        [Test]
+        public void SomeBytes()
+        {
+            ExecuteReader("select 0xFF0872FDDA3FC1EFDA9706B2B3FBAC7BF6DAB1EEB8 as bytes");
+        }
     }
 }

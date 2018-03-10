@@ -1,5 +1,5 @@
 ﻿/* Cameronism.Csv
- * Copyright © 2016 Cameronism.com.  All Rights Reserved.
+ * Copyright © 2018 Cameronism.com.  All Rights Reserved.
  * 
  * Apache License 2.0 - http://www.apache.org/licenses/LICENSE-2.0
  */
@@ -180,6 +180,18 @@ namespace Cameronism.Csv.Tests
                 {
                     Bar = i,
                     Foo = i,
+                });
+		}
+
+		[Test]
+		public void ByteArrays()
+		{
+            Approve(
+                from i in Enumerable.Range(0, 24)
+                select new
+                {
+                    Length = i,
+                    Bytes = Enumerable.Range(0, i).Select(b => (byte)b).ToArray(),
                 });
 		}
 	}

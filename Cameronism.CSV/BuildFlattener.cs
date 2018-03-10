@@ -766,6 +766,13 @@ namespace Cameronism.Csv
 				{
 					typeCode = TypeCode.DateTime;
 				}
+                else if (type == typeof(byte[]))
+                {
+                    // assumption: nobody is using A-Za-z0-9 for the separator
+                    needsEscapeCheck = _Separator == '+' || _Separator == '/' || _Separator == '=';
+                    var mi = typeof(Convert).GetMethod(nameof(Convert.ToBase64String), new[] { type });
+                    return Expression.Call(mi, value);
+                }
 			}
 
 			switch (typeCode)

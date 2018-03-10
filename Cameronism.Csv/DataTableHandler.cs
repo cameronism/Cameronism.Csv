@@ -51,5 +51,6 @@ namespace Cameronism.Csv
         protected override int GetInt32(DataRow row, int i) => (int)row[i];
         protected override long GetInt64(DataRow row, int i) => (long)row[i];
         protected override string GetString(DataRow row, int i) => (string)row[i];
+        protected override byte[] GetByteArray(DataRow row, int i) => (byte[])row[i];
     }
 }

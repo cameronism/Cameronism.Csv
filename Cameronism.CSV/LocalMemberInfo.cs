@@ -42,7 +42,7 @@ namespace Cameronism.Csv
 
 		static bool DefaultShouldExcludeType(Type type)
 		{
-			return type.IsArray;
+			return type.IsArray && type != typeof(byte[]);
 		}
 
 		static bool DefaultShouldIncludeType(Type type)

@@ -39,6 +39,7 @@ namespace Cameronism.Csv
             // could generate a method that invokes members on a class for each type in sequence
         }
 
+        protected override byte[] GetByteArray(T reader, int i) => (byte[])reader.GetValue(i);
         protected override bool GetBoolean(T reader, int i) => reader.GetBoolean(i);
         protected override byte GetByte(T reader, int i) => reader.GetByte(i);
         protected override decimal GetDecimal(T reader, int i) => reader.GetDecimal(i);
