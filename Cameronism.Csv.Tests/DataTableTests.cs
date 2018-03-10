@@ -45,7 +45,7 @@ namespace Cameronism.Csv.Tests
 
             var sw = new StringWriter { NewLine = "\r\n" };
             Serializer.Serialize(sw, dt);
-            ApprovalTests.Approvals.Approve(sw);
+            Approvals.VerifyCsv(sw);
         }
 
         [Test]

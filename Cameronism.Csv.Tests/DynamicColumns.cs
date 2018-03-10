@@ -15,7 +15,7 @@ namespace Cameronism.Csv.Tests
             var writer = new StringWriter { NewLine = "\r\n" };
             Serializer.Serialize(writer, enumerable, columns.ToArray());
 
-            if (approve) ApprovalTests.Approvals.Approve(writer);
+            if (approve) Approvals.VerifyCsv(writer);
         }
 
         [Test]

@@ -1,2 +1,2 @@
-A,B
+﻿A,B
 42,C should be omitted since it does not have a DataMemberAttribute

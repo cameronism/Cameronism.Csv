@@ -31,7 +31,7 @@ namespace Cameronism.Csv.Tests
             writer.WriteLine("= Members");
             writer.WriteLine(JsonConvert.SerializeObject(members, Formatting.Indented));
 
-            ApprovalTests.Approvals.Approve(writer);
+            Approvals.VerifyText(writer);
         }
 
         [Test]

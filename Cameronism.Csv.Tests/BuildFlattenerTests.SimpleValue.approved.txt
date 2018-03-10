@@ -1,4 +1,4 @@
-= Value
+﻿= Value
 1
 
 = Flat

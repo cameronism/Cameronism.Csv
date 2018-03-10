@@ -27,7 +27,7 @@ namespace Cameronism.Csv.Tests
             writer.WriteLine("= Flat");
             writer.WriteLine(JsonConvert.SerializeObject(flatItem, Formatting.Indented));
 
-            ApprovalTests.Approvals.Approve(writer);
+            Approvals.VerifyText(writer);
         }
 
         [Test]
@@ -104,7 +104,7 @@ namespace Cameronism.Csv.Tests
             FlattenIt(writer, new C<int> { Foo = 42 }, new KeyValuePair<string, int>("Eleven", 11));
             FlattenIt(writer, new C<string> { Foo = 42 }, new KeyValuePair<string, string>("One", "one"));
             FlattenIt(writer, new C<DayOfWeek> { Foo = 42 }, new KeyValuePair<string, DayOfWeek>("Today", DayOfWeek.Tuesday));
-            ApprovalTests.Approvals.Approve(writer);
+            Approvals.VerifyText(writer);
         }
     }
 }

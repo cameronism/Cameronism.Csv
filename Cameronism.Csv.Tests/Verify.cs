@@ -36,7 +36,7 @@ namespace Cameronism.Csv.Tests
 
             action(enumerable, writer);
 
-            ApprovalTests.Approvals.Approve(writer);
+            Approvals.VerifyCsv(writer);
         }
 
         [Test]

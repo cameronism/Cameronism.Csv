@@ -23,7 +23,7 @@ namespace Cameronism.Csv.Tests
                     {
                         var sw = new StringWriter { NewLine = "\r\n" };
                         Serializer.Serialize(sw, reader);
-                        ApprovalTests.Approvals.Approve(sw);
+                        Approvals.VerifyCsv(sw);
                     }
                 }
             }
