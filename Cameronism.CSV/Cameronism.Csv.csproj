@@ -2,15 +2,16 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net45;net40</TargetFrameworks>
-    <AssemblyVersion>0.5.0.0</AssemblyVersion>
-    <FileVersion>0.5.0.0</FileVersion>
-    <Version>0.5.0.0</Version>
+    <AssemblyVersion>0.5.1.0</AssemblyVersion>
+    <FileVersion>0.5.1.0</FileVersion>
+    <Version>0.5.1.0</Version>
     <Copyright>Copyright 2018 Cameron Jordan</Copyright>
     <PackageLicenseUrl>http://opensource.org/licenses/Apache-2.0</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/cameronism/Cameronism.Csv</PackageProjectUrl>
     <RepositoryUrl>https://github.com/cameronism/Cameronism.Csv</RepositoryUrl>
     <PackageTags>csv</PackageTags>
-    <PackageReleaseNotes>netstandard 2.0</PackageReleaseNotes>
+    <PackageReleaseNotes>netstandard 2.0
+Support byte[] to base64</PackageReleaseNotes>
     <Authors>Cameron Jordan</Authors>
     <Company>cameronism</Company>
     <Product />
